@@ -4,3 +4,6 @@ _cache
 
 # Ignore only the root catalog clone (external repo), not content/catalog/
 /catalog
+
+# Ignore synced catalog content (generated during build)
+/content/catalog
