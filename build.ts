@@ -60,6 +60,7 @@ const deno = new Deno.Command(Deno.execPath(), {
     "--allow-write",
     "--allow-run",
     "--allow-net",
+    "--allow-sys",
     "lume/cli.ts"
   ],
   stdout: "inherit",
