@@ -22,26 +22,10 @@ try {
 }
 
 const CONTENT_DIR = "./content";
-// Ensure content directory exists
-await Deno.mkdir(CONTENT_DIR, { recursive: true });
-
-// Recursively copy files from catalog to content
-async function copyRecursive(src: string, dest: string) {
-  for await (const entry of Deno.readDir(src)) {
-    const srcPath = `${src}/${entry.name}`;
-    const destPath = `${dest}/${entry.name}`;
-    if (entry.isFile) {
-      await Deno.copyFile(srcPath, destPath);
-    } else if (entry.isDirectory) {
-      await Deno.mkdir(destPath, { recursive: true });
-      await copyRecursive(srcPath, destPath);
-    }
-  }
-}
-
-await copyRecursive(CATALOG_DIR, CONTENT_DIR);
-
-console.log(`Successfully copied catalog files from ${CATALOG_DIR} to ${CONTENT_DIR}`);
+// Since Lume is configured to use the 'catalog' directory as its source (src),
+// we no longer need to copy files to a separate 'content' folder.
+// The build script now simply runs the Lume build task.
+console.log(`Using catalog directory ${CATALOG_DIR} as the Lume source`);
 
 // Run Lume build task
 const cmd = new Deno.Command("deno", {
