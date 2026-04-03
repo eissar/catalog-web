@@ -36,7 +36,7 @@ Wikilinks automatically use the target page's title or the wikilink text as the 
 Broken links are styled differently via CSS:
 ```css
 a.broken-link {
-  color: #dc3545; /* Red for broken links */
+  color: #888; /* Grey for broken links */
   text-decoration: line-through;
 }
 ```
