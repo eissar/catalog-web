@@ -10,7 +10,7 @@ URL="http://localhost:$PORT"
 WAIT_TIME=5
 
 echo "Starting Lume development server..."
-~/.deno/bin/deno task serve &
+${DENO_BIN:-deno} task serve &
 SERVER_PID=$!
 
 echo "Server started with PID: $SERVER_PID"

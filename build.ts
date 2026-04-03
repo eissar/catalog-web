@@ -3,13 +3,14 @@
 
 // Ensure required permissions are granted in deno.json (env, read, write, run)
 
-const CATALOG_DIR = Deno.env.get("CATALOG_DIR");
+let CATALOG_DIR = Deno.env.get("CATALOG_DIR");
 if (!CATALOG_DIR) {
-  console.error("Error: Environment variable CATALOG_DIR is not set.");
-  Deno.exit(1);
+  // Default to ./catalog if environment variable not provided
+  CATALOG_DIR = "./catalog";
+  console.log(`CATALOG_DIR not set, defaulting to ${CATALOG_DIR}`);
 }
 
-// Verify that the catalog directory exists
+// Ensure the catalog directory exists; if not, clone the repository
 try {
   const stat = await Deno.stat(CATALOG_DIR);
   if (!stat.isDirectory) {
@@ -17,8 +18,18 @@ try {
     Deno.exit(1);
   }
 } catch (e) {
-  console.error(`Error: Unable to access CATALOG_DIR (${CATALOG_DIR}): ${e.message}`);
-  Deno.exit(1);
+  console.log(`Catalog directory not found. Cloning repository into ${CATALOG_DIR}...`);
+  const cloneCmd = new Deno.Command("git", {
+    args: ["clone", "https://github.com/eissar/catalog", CATALOG_DIR],
+    cwd: Deno.cwd(),
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const { status } = await cloneCmd.spawn().status();
+  if (!status.success) {
+    console.error("Failed to clone catalog repository");
+    Deno.exit(status.code);
+  }
 }
 
 const CONTENT_DIR = "./content";

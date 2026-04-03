@@ -1,0 +1,15 @@
+[0m[33mWarning[0m Permissions in the config file is an experimental feature and may change in the future.
+Web server started...
+Loading config file [90mfile:///home/eissar/.cline/worktrees/47baf/catalog-web/_config.ts[39m
+🔥 /example-page/ <- [90m/example-page.md[39m
+🔥 / <- [90m/index.md[39m
+🍾 Site built into [90m./_site[39m
+  [90m2 files generated in 0.02 seconds[39m
+
+  Server started at:
+  [92mhttp://localhost:3003/[39m (local)
+  [92mhttp://192.168.68.72:3003/[39m (network)
+
+  LumeCMS started at:
+  [92mhttp://localhost:3003/admin[39m (local)
+  [92mhttp://192.168.68.72:3003/admin[39m (network)
