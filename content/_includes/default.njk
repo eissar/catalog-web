@@ -84,6 +84,18 @@
       vertical-align: text-top;
     }
     .note-container blockquote { border-left: 3px solid var(--color-accent); padding-left: 1rem; margin: 1rem 0; color: var(--color-text-secondary); }
+    
+    /* Broken link styling */
+    .broken-link {
+      color: #dc3545;
+      text-decoration: line-through;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .broken-link:hover {
+      text-decoration: line-through;
+    }
+
     @media (max-width: 600px) { .note-container { padding: 1.25rem; } .site-header { margin-top: 1.25rem; } }
   </style>
 </head>
