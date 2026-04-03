@@ -32,6 +32,10 @@
     }
   },
   "tasks": {
+    "index": {
+      "description": "Index catalog files and build site",
+      "command": "deno run --allow-env --allow-read --allow-write --allow-run build.ts"
+    },
     "lume": {
       "description": "Run Lume command",
       "command": "deno run -P=lume lume/cli.ts"
