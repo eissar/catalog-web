@@ -2,4 +2,5 @@ _site
 _cache
 .env
 
-catalog
+# Ignore only the root catalog clone (external repo), not content/catalog/
+/catalog
