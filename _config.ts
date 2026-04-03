@@ -65,7 +65,7 @@ function processWikilinks(html: string, pages: any[]): string {
         const href = headingRef 
           ? `${targetPage.data.url}#${headingRef}`
           : targetPage.data.url;
-        return `<a href="${href}" class="wikilink">${escapeHtml(displayText)}</a>`;
+        return `<a href="${href}" class="wikilink">[${escapeHtml(displayText)}]</a>`;
       } else {
         return `<a href="#" class="broken-link" title="Page not found: ${escapeHtml(wikilinkId)}">${escapeHtml(displayText)}</a>`;
       }
