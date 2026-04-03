@@ -32,7 +32,7 @@ try {
   }
 }
 
-const CONTENT_DIR = "./content";
+// const CONTENT_DIR = "./content";
 // Since Lume is configured to use the 'catalog' directory as its source (src),
 // we no longer need to copy files to a separate 'content' folder.
 // The build script now simply runs the Lume build task.
