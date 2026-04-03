@@ -1,6 +1,5 @@
 ---
 title: Example Page
-layout: default
 ---
 
 <div id="search"></div>
