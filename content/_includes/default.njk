@@ -105,69 +105,61 @@
   </main>
 
   <!-- PageFind search bundle (output by the Lume pagefind plugin) -->
-  <script src="/pagefind/pagefind.js"></script>
-  <script>
-    (function () {
-      const input = document.getElementById("pagefind-search-input");
-      const resultsContainer = document.getElementById("search-results");
-      const clearBtn = document.getElementById("search-clear");
-      let pagefindReady = false;
+  <script type="module">
+    import { init, debouncedSearch } from "/pagefind/pagefind.js";
 
-      function showLoading() {
-        resultsContainer.innerHTML = '<div class="search-loading">Loading search index…</div>';
+    const input = document.getElementById("pagefind-search-input");
+    const resultsContainer = document.getElementById("search-results");
+    const clearBtn = document.getElementById("search-clear");
+
+    // Initialize PageFind (loads WASM index in background)
+    init();
+
+    function clearResults() {
+      resultsContainer.innerHTML = "";
+      resultsContainer.classList.remove("active");
+      clearBtn.classList.remove("visible");
+    }
+
+    async function renderResults(result) {
+      if (!result || !result.results.length) {
+        resultsContainer.innerHTML = '<div class="search-no-results">No results found</div>';
         resultsContainer.classList.add("active");
+        return;
       }
-      function clearResults() {
-        resultsContainer.innerHTML = "";
-        resultsContainer.classList.remove("active");
-        clearBtn.classList.remove("visible");
-      }
-      function renderResults(results) {
-        if (!results || results.results.length === 0) {
-          resultsContainer.innerHTML = '<div class="search-no-results">No results found</div>';
-          resultsContainer.classList.add("active");
-          return;
-        }
-        const html = results.results.map((r) =>
-          `<a href="${r.url}" class="search-result-item">
-            <div class="search-result-title">${r.meta?.title || "Untitled"}</div>
-            <div class="search-result-excerpt">${r.excerpt || ""}</div>
-          </a>`
-        ).join("");
-        resultsContainer.innerHTML = html;
-        resultsContainer.classList.add("active");
-      }
+      // Resolve all fragment data (excerpt, title) concurrently
+      const items = await Promise.all(
+        result.results.map(async (r) => {
+          const data = await r.data();
+          return `<a href="${data.url}" class="search-result-item">
+            <div class="search-result-title">${data.meta?.title || "Untitled"}</div>
+            <div class="search-result-excerpt">${data.excerpt || ""}</div>
+          </a>`;
+        })
+      );
+      resultsContainer.innerHTML = items.join("");
+      resultsContainer.classList.add("active");
+    }
 
-      async function handleSearch(query) {
-        query = query.trim();
-        clearBtn.classList.toggle("visible", query.length > 0);
-        if (query.length < 2) { clearResults(); return; }
-        if (!pagefindReady) { showLoading(); return; }
-        try {
-          const searchResult = await window.pagefind.debouncedSearch(query);
-          renderResults(searchResult);
-        } catch (err) { console.error("PageFind error:", err); }
-      }
+    async function handleSearch(query) {
+      query = query.trim();
+      clearBtn.classList.toggle("visible", query.length > 0);
+      if (query.length < 2) { clearResults(); return; }
+      try {
+        const result = await debouncedSearch(query, {}, 200);
+        renderResults(result);
+      } catch (err) { console.error("PageFind error:", err); }
+    }
 
-      let debounceTimer;
-      input.addEventListener("input", (e) => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => handleSearch(e.target.value), 200);
-      });
-      clearBtn.addEventListener("click", () => { input.value = ""; clearResults(); input.focus(); });
-      document.addEventListener("click", (e) => { if (!e.target.closest(".search-container")) clearResults(); });
-      resultsContainer.addEventListener("click", (e) => e.stopPropagation());
-      input.addEventListener("keydown", (e) => { if (e.key === "Escape") { clearResults(); input.blur(); } });
-
-      // Poll for PageFind to be ready
-      function initPageFind() {
-        if (window.pagefind) {
-          pagefindReady = true;
-          if (input.value.trim().length >= 2) handleSearch(input.value); else clearResults();
-        } else { setTimeout(initPageFind, 50); }
-      }
-      initPageFind();
-    })();
+    let debounceTimer;
+    input.addEventListener("input", (e) => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => handleSearch(e.target.value), 200);
+    });
+    clearBtn.addEventListener("click", () => { input.value = ""; clearResults(); input.focus(); });
+    document.addEventListener("click", (e) => { if (!e.target.closest(".search-container")) clearResults(); });
+    resultsContainer.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("keydown", (e) => { if (e.key === "Escape") { clearResults(); input.blur(); } });
   </script>
 </body>
 </html>
