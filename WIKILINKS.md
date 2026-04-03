@@ -78,7 +78,7 @@ Output:
 The wikilinks plugin is configured in `_config.ts`:
 
 ```typescript
-import wikilinks from "markdown-plugins/wikilinks.ts";
+import wikilinks from "./markdown-plugins/wikilinks.ts";
 
 // Enable wikilinks parsing
 site.use(wikilinks());
