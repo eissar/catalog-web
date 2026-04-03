@@ -12,7 +12,7 @@
     },
     "lume": {
       "description": "Run Lume command",
-      "command": "deno run --allow-env --allow-read --allow-write --allow-run --allow-net lume/cli.ts"
+      "command": "deno run --allow-env --allow-read --allow-write --allow-run --allow-net --allow-sys lume/cli.ts"
     },
     "build": {
       "description": "Build the site for production",
