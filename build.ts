@@ -1,12 +1,8 @@
 // build.ts - ensure catalog repo is present, sync files into content/, then run the Lume build
-// Usage: deno run --allow-env --allow-read --allow-write --allow-run build.ts
+// Usage: deno run --allow-env --allow-read --allow-write --allow-run --allow-net build.ts
 
 const CATALOG_DIR = Deno.env.get("CATALOG_DIR") ?? "./catalog";
 const CONTENT_CATALOG_DIR = "./content/catalog";
-
-async function run(args: string[], opts?: Deno.CommandOptions): Promise<Deno.CommandOutput> {
-  return new Deno.Command(args[0], { ...opts, args: args.slice(1) }).spawn().output();
-}
 
 // Ensure catalog directory exists; clone if missing
 try {
@@ -17,11 +13,17 @@ try {
   }
 } catch {
   console.log(`Catalog not found — cloning into ${CATALOG_DIR}...`);
-  const { stderr, status } = await run(["git", "clone", "https://github.com/eissar/catalog", CATALOG_DIR]);
-  if (!status.success) {
+  const git = new Deno.Command("git", {
+    args: ["clone", "https://github.com/eissar/catalog", CATALOG_DIR],
+    stdout: "piped",
+    stderr: "piped",
+  });
+  const { code, stdout, stderr } = await git.output();
+  if (code !== 0) {
     console.error("Clone failed:", new TextDecoder().decode(stderr));
-    Deno.exit(status.code);
+    Deno.exit(code);
   }
+  console.log("Clone successful!");
 }
 
 // Sync catalog .md files into content/catalog/ so Lume can process them.
@@ -32,6 +34,7 @@ console.log(`Syncing ${CATALOG_DIR} → ${CONTENT_CATALOG_DIR} ...`);
 await Deno.mkdir(CONTENT_CATALOG_DIR, { recursive: true });
 
 // Read all .md files from the catalog source
+let fileCount = 0;
 for await (const entry of Deno.readDir(CATALOG_DIR)) {
   if (!entry.isFile || !entry.name.endsWith(".md")) continue;
 
@@ -41,16 +44,29 @@ for await (const entry of Deno.readDir(CATALOG_DIR)) {
   // Copy file into content/catalog/
   const content = await Deno.readFile(srcPath);
   await Deno.writeFile(destPath, content);
+  fileCount++;
   console.log(`  Synced: ${entry.name}`);
 }
 
-console.log(`Building from ${CONTENT_CATALOG_DIR} ...`);
+console.log(`Synced ${fileCount} files`);
 
 // Run Lume build
-const { stdout, stderr, status } = await run(["deno", "task", "build"]);
-if (status.success) {
-  console.log(new TextDecoder().decode(stdout));
-} else {
-  console.error("Build failed:", new TextDecoder().decode(stderr));
-  Deno.exit(status.code);
+console.log(`Building site...`);
+const deno = new Deno.Command(Deno.execPath(), {
+  args: [
+    "run",
+    "--allow-env",
+    "--allow-read",
+    "--allow-write",
+    "--allow-run",
+    "--allow-net",
+    "lume/cli.ts"
+  ],
+  stdout: "inherit",
+  stderr: "inherit",
+});
+const buildResult = await deno.spawn().status;
+if (!buildResult.success) {
+  Deno.exit(buildResult.code);
 }
+console.log("Build complete!");

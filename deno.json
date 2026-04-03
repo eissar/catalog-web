@@ -2,43 +2,17 @@
   "imports": {
     "lume/": "https://cdn.jsdelivr.net/gh/lumeland/lume@3.2.2/",
     "lume/jsx-runtime": "https://cdn.jsdelivr.net/gh/oscarotero/ssx@0.1.14/jsx-runtime.ts",
-    "lume/cms/": "https://cdn.jsdelivr.net/gh/lumeland/cms@0.14.16/"
-  },
-  "permissions": {
-    "lume": {
-      "read": true,
-      "write": [
-        "./"
-      ],
-      "import": [
-        "cdn.jsdelivr.net:443",
-        "jsr.io:443",
-        "deno.land:443",
-        "esm.sh:443"
-      ],
-      "net": [
-        "0.0.0.0",
-        "cdn.jsdelivr.net:443",
-        "data.jsdelivr.com:443",
-        "jsr.io:443",
-        "deno.land:443",
-        "esm.sh:443",
-        "registry.npmjs.org:443"
-      ],
-      "env": true,
-      "run": true,
-      "ffi": true,
-      "sys": true
-    }
+    "lume/cms/": "https://cdn.jsdelivr.net/gh/lumeland/cms@0.14.16/",
+    "markdown-plugins/": "https://cdn.jsdelivr.net/gh/lumeland/markdown-plugins@0.12.0/"
   },
   "tasks": {
     "index": {
       "description": "Index catalog files and build site",
-      "command": "deno run --allow-env --allow-read --allow-write --allow-run build.ts"
+      "command": "deno run --allow-env --allow-read --allow-write --allow-run --allow-net build.ts"
     },
     "lume": {
       "description": "Run Lume command",
-      "command": "deno run -P=lume lume/cli.ts"
+      "command": "deno run lume/cli.ts"
     },
     "build": {
       "description": "Build the site for production",
