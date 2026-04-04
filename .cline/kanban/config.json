@@ -1,0 +1,14 @@
+{
+  "shortcuts": [
+    {
+      "label": "build",
+      "command": "deno task build",
+      "icon": "play"
+    },
+    {
+      "label": "serve",
+      "command": "deno task build && deno task serve",
+      "icon": "bug"
+    }
+  ]
+}

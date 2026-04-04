@@ -17,6 +17,8 @@ site.use(nunjucks());
 // Enable PageFind for static search indexing
 site.use(pagefind());
 
+site.copy(".nojekyll"); // disable jekyll for github pages
+
 // Wikilink regex pattern: [[page]] or [[page#heading]] or [[page|Display Text]]
 const wikilinkPattern = /\[\[([^\]|#]+)(?:#([^|\]]+))?(?:\|([^\]]+))?\]\]/g;
 
