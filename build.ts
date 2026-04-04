@@ -35,18 +35,22 @@ await Deno.mkdir(CONTENT_CATALOG_DIR, { recursive: true });
 
 // Read all .md files from the catalog source
 let fileCount = 0;
+// Collect markdown entries
+const entries = [];
 for await (const entry of Deno.readDir(CATALOG_DIR)) {
-  if (!entry.isFile || !entry.name.endsWith(".md")) continue;
-
+  if (entry.isFile && entry.name.endsWith(".md")) {
+    entries.push(entry);
+  }
+}
+// Copy files in parallel using Promise.all
+await Promise.all(entries.map(async (entry) => {
   const srcPath = `${CATALOG_DIR}/${entry.name}`;
   const destPath = `${CONTENT_CATALOG_DIR}/${entry.name}`;
-
-  // Copy file into content/catalog/
   const content = await Deno.readFile(srcPath);
   await Deno.writeFile(destPath, content);
-  fileCount++;
   console.log(`  Synced: ${entry.name}`);
-}
+}));
+fileCount = entries.length;
 
 console.log(`Synced ${fileCount} files`);
 
