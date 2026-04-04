@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Userchrome.js Snippets</title>
+  <link rel="stylesheet" href="/pagefind/pagefind-ui.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-bg: #fafafa;
+      --color-surface: #ffffff;
+      --color-text: #1a1a2e;
+      --color-text-secondary: #555;
+      --color-border: #e0e0e0;
+      --color-accent: #4361ee;
+      --max-width: 720px;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.7;
+      padding: 0 1rem;
+    }
+    .site-header { max-width: var(--max-width); margin: 2rem auto 1.5rem; text-align: center; }
+    .site-header h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 1rem; color: var(--color-text); }
+    .search-container { position: relative; max-width: 480px; margin: 0 auto; }
+    .search-input-wrapper {
+      display: flex; align-items: center;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px; padding: 0.6rem 1rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .search-input-wrapper:focus-within { border-color: var(--color-accent); box-shadow: 0 0 0 3px rgba(67,97,238,0.12); }
+    .search-icon { width: 18px; height: 18px; color: var(--color-text-secondary); flex-shrink: 0; margin-right: 0.5rem; }
+    #pagefind-search-input { flex: 1; border: none; outline: none; background: transparent; font-size: 0.95rem; color: var(--color-text); font-family: inherit; }
+    #pagefind-search-input::placeholder { color: #aaa; }
+    .search-clear { display: none; background: none; border: none; cursor: pointer; color: var(--color-text-secondary); padding: 2px; margin-left: 0.25rem; }
+    .search-clear.visible { display: block; }
+
+    /* Search results dropdown */
+    .search-results {
+      position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+      max-height: 420px; overflow-y: auto; z-index: 100; display: none;
+    }
+    .search-results.active { display: block; }
+    .search-result-item { padding: 0.75rem 1rem; border-bottom: 1px solid var(--color-border); cursor: pointer; text-decoration: none; color: inherit; display: block; transition: background 0.15s; }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-item:hover { background: #f5f7ff; }
+    .search-result-title { font-weight: 600; font-size: 0.92rem; margin-bottom: 0.2rem; }
+    .search-result-excerpt { font-size: 0.82rem; color: var(--color-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .search-result-excerpt mark { background-color: #fff3a3; color: inherit; padding: 0 1px; border-radius: 2px; }
+    .search-no-results { padding: 1rem; text-align: center; color: var(--color-text-secondary); font-size: 0.9rem; }
+    .search-loading { padding: 1rem; text-align: center; color: var(--color-text-secondary); font-size: 0.9rem; }
+
+    /* Note content */
+    .note-container {
+      max-width: var(--max-width); margin: 0 auto 4rem;
+      background: var(--color-surface); border: 1px solid var(--color-border);
+      border-radius: 10px; padding: 2rem 2.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .note-container h1 { font-size: 1.75rem; font-weight: 700; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--color-border); }
+    .note-container h2 { font-size: 1.35rem; font-weight: 600; margin-top: 1.75rem; margin-bottom: 0.75rem; }
+    .note-container h3 { font-size: 1.1rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+    .note-container p { margin-bottom: 1rem; }
+    .note-container ul, .note-container ol { padding-left: 1.5rem; margin-bottom: 1rem; }
+    .note-container li { margin-bottom: 0.35rem; }
+    .note-container code { background: #f0f0f0; padding: 0.15em 0.35em; border-radius: 4px; font-size: 0.88em; }
+    .note-container pre { background: #1e1e2e; color: #cdd6f4; padding: 1.25rem; border-radius: 8px; overflow-x: auto; margin-bottom: 1rem; }
+    .note-container pre code { background: transparent; padding: 0; color: inherit; }
+    .note-container a { color: var(--color-accent); text-decoration: none; }
+    .note-container a:hover { text-decoration: underline; }
+    /* Add an indicator after external links that'll open in a new window. */
+    .note-container a[href^="http"]::after {
+      content: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234361ee' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6'/%3E%3Cpolyline points='15 3 21 3 21 9'/%3E%3Cline x1='10' y1='14' x2='21' y2='3'/%3E%3C/svg%3E");
+      display: inline-block;
+      height: 0.7em;
+      padding-inline: 0.15em;
+      line-height: 1;
+      vertical-align: text-top;
+    }
+    .note-container blockquote { border-left: 3px solid var(--color-accent); padding-left: 1rem; margin: 1rem 0; color: var(--color-text-secondary); }
+    
+    /* Broken link styling */
+    .note-container .broken-link {
+      color: #888;
+      text-decoration: line-through;
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+    .note-container .broken-link:hover {
+      text-decoration: line-through;
+    }
+
+    @media (max-width: 600px) { .note-container { padding: 1.25rem; } .site-header { margin-top: 1.25rem; } }
+  </style>
+</head>
+<body>
+
+  <!-- ── Site Header with PageFind Search ── -->
+  <header class="site-header">
+    <h1>Catalog</h1>
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <svg class="search-icon" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input id="pagefind-search-input" type="text" placeholder="Search notes…" autocomplete="off">
+        <button class="search-clear" id="search-clear" aria-label="Clear search" type="button">
+          <svg width="16" height="16" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </header>
+
+  <!-- ── Note Content ── -->
+  <main class="note-container">
+    <p>test added change</p>
+<h2>snippets</h2>
+<pre><code class="language-js">function setClipboard(dat) {
+  let str = Cc["@mozilla.org/supports-string;1"].createInstance(
+    Ci.nsISupportsString
+  );
+  str.data = dat;
+  let transferable = Cc["@mozilla.org/widget/transferable;1"].createInstance(Ci.nsITransferable);
+  transferable.init(getLoadContext());
+  transferable.addDataFlavor("text/plain");
+  transferable.setTransferData("text/plain", str);
+  Services.clipboard.setData(
+    transferable,
+    null,
+    Ci.nsIClipboard.kGlobalClipboard
+  );
+}
+</code></pre>
+<pre><code class="language-js">gBrowser.adoptTab
+a = UC_API.Windows.getAll()
+b = a[1].gBrowser.adoptTab(t)
+
+window.docShell.messageManager // mm
+
+
+// how to store global state?
+// with class based objects per-window?
+globalThis.a = new a()
+
+
+// open in new tab
+const { BrowserWindowTracker } = await import('resource:///modules/BrowserWindowTracker.sys.mjs')
+BrowserWindowTracker.openWindow()
+
+// get profile path
+let ProfilePathChrome = PathUtils.toFileURI(PathUtils.join(PathUtils.profileDir, 'chrome'));
+
+// open trusted url in new tab
+URILoadingHelper.openTrustedLinkIn(window, 'about:preferences', 'tab');
+
+// duplicate current tab
+const nt = gBrowser.duplicateTab(gBrowser.selectedTab);
+gBrowser.selectedTab = nt;
+
+// what's this?
+gBrowser.selectedBrowser.getAttributeNames() // seems like attributes on the &lt;tabbrowser&gt; element.
+
+// show notification
+UC_API.Notifications.show({
+    label : "Welcome to ium! To get the full Geckium experience, download Geckium from Releases or compile your chrome folder.",
+    type : "geckium-notification",
+    priority: "critical"
+});
+
+
+// get tabs in MRU (most recently used) order.
+SessionStore.getCurrentState().windows
+    .flatMap(win =&gt; win.tabs)
+    .sort((a, b) =&gt; b.lastAccessed - a.lastAccessed);
+
+
+
+// can we navigate to a tab while not updating the
+// 'lastAccessed' time?
+// If not, calling 'navigate -1 by lastAccessed time will just switch between two tabs
+//
+// if so, we can implement functionality like a jumplist
+// for buffers in neovim
+</code></pre>
+
+  </main>
+
+  <!-- PageFind search bundle (output by the Lume pagefind plugin) -->
+  <script type="module">
+    import { init, debouncedSearch } from "/pagefind/pagefind.js";
+
+    const input = document.getElementById("pagefind-search-input");
+    const resultsContainer = document.getElementById("search-results");
+    const clearBtn = document.getElementById("search-clear");
+
+    // Initialize PageFind (loads WASM index in background)
+    init();
+
+    function clearResults() {
+      resultsContainer.innerHTML = "";
+      resultsContainer.classList.remove("active");
+      clearBtn.classList.remove("visible");
+    }
+
+    async function renderResults(result) {
+      if (!result || !result.results.length) {
+        resultsContainer.innerHTML = '<div class="search-no-results">No results found</div>';
+        resultsContainer.classList.add("active");
+        return;
+      }
+      // Resolve all fragment data (excerpt, title) concurrently
+      const items = await Promise.all(
+        result.results.map(async (r) => {
+          const data = await r.data();
+          return `<a href="${data.url}" class="search-result-item">
+            <div class="search-result-title">${data.meta?.title || "Untitled"}</div>
+            <div class="search-result-excerpt">${data.excerpt || ""}</div>
+          </a>`;
+        })
+      );
+      resultsContainer.innerHTML = items.join("");
+      resultsContainer.classList.add("active");
+    }
+
+    async function handleSearch(query) {
+      query = query.trim();
+      clearBtn.classList.toggle("visible", query.length > 0);
+      if (query.length < 2) { clearResults(); return; }
+      try {
+        const result = await debouncedSearch(query, {}, 200);
+        renderResults(result);
+      } catch (err) { console.error("PageFind error:", err); }
+    }
+
+    let debounceTimer;
+    input.addEventListener("input", (e) => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => handleSearch(e.target.value), 200);
+    });
+    clearBtn.addEventListener("click", () => { input.value = ""; clearResults(); input.focus(); });
+    document.addEventListener("click", (e) => { if (!e.target.closest(".search-container")) clearResults(); });
+    resultsContainer.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("keydown", (e) => { if (e.key === "Escape") { clearResults(); input.blur(); } });
+  </script>
+
+
+</body></html>
