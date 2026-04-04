@@ -1,0 +1,41 @@
+# Woodpecker CI configuration for catalog-web
+# Deploys the site to GitHub Pages
+
+steps:
+  build:
+    image: ghcr.io/eissar/catalog-web-builder:latest
+    commands:
+      - deno task build
+
+  validate:
+    image: ghcr.io/eissar/catalog-web-builder:latest
+    commands:
+      - |
+        catalog_files=$(find _site -path "*/catalog/*.html")
+        if [ -z "$catalog_files" ]; then
+          echo "ERROR: No catalog files found in build output!"
+          exit 1
+        fi
+        echo "✓ Catalog files found"
+
+  deploy:
+    image: ghcr.io/eissar/catalog-web-builder:latest
+    environment:
+      GITHUB_TOKEN:
+        from_secret: github_token
+    commands:
+      - git config --global user.email "deploy@woodpecker-ci.org"
+      - git config --global user.name "Woodpecker CI"
+      - mkdir gh-pages
+      - git -C gh-pages init
+      - git -C gh-pages checkout -b gh-pages
+      - rsync -a --delete --exclude=.git _site/ gh-pages/
+      - touch gh-pages/.nojekyll
+      - git -C gh-pages add .
+      - git -C gh-pages diff --cached --quiet && echo "No changes to deploy" && exit 0
+      - git -C gh-pages commit -m "Deploy [skip ci]"
+      - git -C gh-pages push --force https://$GITHUB_TOKEN@github.com/eissar/catalog-web.git HEAD:gh-pages
+
+when:
+  - event: [push, manual]
+    branch: master

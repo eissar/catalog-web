@@ -1,6 +1,7 @@
 _site
 _cache
 .env
+/dist
 
 # Ignore only the root catalog clone (external repo), not content/catalog/
 /catalog

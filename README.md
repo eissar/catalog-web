@@ -80,3 +80,24 @@ The search bar (in the header of every page) is powered by **PageFind**:
 | `$DENO_HOME task serve` | Dev server with live reload |
 | `$DENO_HOME task lume` | Raw Lume CLI access |
 | `$DENO_HOME task index` | Custom index + build script |
+
+## Deployment
+
+The site is automatically deployed to GitHub Pages using **Woodpecker CI**. When changes are pushed to the `main` branch, Woodpecker CI will:
+
+1. Build the site using Deno and Lume
+2. Validate that catalog files are present
+3. Deploy the built site to the `gh-pages` branch
+
+### Woodpecker CI Setup
+
+To set up Woodpecker CI for this repository:
+
+1. **Enable Woodpecker CI** on your Woodpecker instance
+2. **Add the GitHub token secret**:
+   - Create a GitHub Personal Access Token with `repo` scope
+   - Add it as a secret named `github_token` in Woodpecker CI
+
+3. **Configure the repository** in Woodpecker CI to use the `.woodpecker.yml` configuration
+
+The deployment pipeline is defined in `.woodpecker.yml` and handles the entire build and deployment process automatically.

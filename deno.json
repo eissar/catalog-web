@@ -6,10 +6,6 @@
     "markdown-plugins/": "https://cdn.jsdelivr.net/gh/lumeland/markdown-plugins@0.12.0/"
   },
   "tasks": {
-    "deploy": {
-      "description": "Deploy site to gh-pages",
-      "command": "rm -rf _site && deno task build && git worktree add -B gh-pages _site origin/gh-pages && cd _site && git add . && git commit -m 'Deploy' && git push origin gh-pages --force && cd .. && rm -rf _site"
-    },
     "index": {
       "description": "Index catalog files and build site",
       "command": "deno run --allow-env --allow-read --allow-write --allow-run --allow-net build.ts"
@@ -26,7 +22,7 @@
       "description": "Run and serve the site for development",
       "command": "deno task lume -s"
     }
-  },
+   },
   "compilerOptions": {
     "types": [
       "lume/types.ts"

@@ -33,6 +33,12 @@ console.log(`Syncing ${CATALOG_DIR} → ${CONTENT_CATALOG_DIR} ...`);
 // Ensure content/catalog/ exists
 await Deno.mkdir(CONTENT_CATALOG_DIR, { recursive: true });
 
+// First, clean up any existing files/symlinks in content/catalog/
+for await (const entry of Deno.readDir(CONTENT_CATALOG_DIR)) {
+  const filePath = `${CONTENT_CATALOG_DIR}/${entry.name}`;
+  await Deno.remove(filePath);
+}
+
 // Read all .md files from the catalog source
 let fileCount = 0;
 // Collect markdown entries
@@ -46,13 +52,47 @@ for await (const entry of Deno.readDir(CATALOG_DIR)) {
 await Promise.all(entries.map(async (entry) => {
   const srcPath = `${CATALOG_DIR}/${entry.name}`;
   const destPath = `${CONTENT_CATALOG_DIR}/${entry.name}`;
-  const content = await Deno.readFile(srcPath);
-  await Deno.writeFile(destPath, content);
+  let content = await Deno.readTextFile(srcPath);
+  
+  // Fix date format issues in front matter
+  // Replace quoted dates with proper date format
+  content = content.replace(/date:\s*"([^"]+)"/g, 'date: $1');
+  content = content.replace(/lastmod:\s*"([^"]+)"/g, 'lastmod: $1');
+  
+  // Inject layout frontmatter if not present
+  if (!content.includes('layout:')) {
+    // Check if file already has frontmatter
+    if (content.startsWith('---')) {
+      // Add layout to existing frontmatter
+      content = content.replace(/^---\s*\n/, '---\nlayout: default.njk\n');
+    } else {
+      // Add frontmatter with layout
+      content = `---\nlayout: default.njk\n---\n\n${content}`;
+    }
+  }
+  
+  // Copy the file
+  await Deno.writeTextFile(destPath, content);
   console.log(`  Synced: ${entry.name}`);
 }));
 fileCount = entries.length;
 
 console.log(`Synced ${fileCount} files`);
+
+// Assert that at least one file exists in the catalog directory
+if (fileCount === 0) {
+  console.error(`Error: No files found in ${CATALOG_DIR}`);
+  Deno.exit(1);
+}
+
+// Ensure at least one copied file resides in a catalog path
+const catalogFiles = entries.filter(entry => `${CONTENT_CATALOG_DIR}/${entry.name}`.includes('/catalog'));
+if (catalogFiles.length === 0) {
+  console.error('Error: No copied files contain "/catalog" in their path.');
+  Deno.exit(1);
+}
+
+// Run Lume build
 
 // Run Lume build
 console.log(`Building site...`);

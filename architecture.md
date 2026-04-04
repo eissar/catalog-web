@@ -1,1 +1,0 @@
-- building -> to start, we need to extract all notes which contain
