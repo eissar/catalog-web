@@ -121,24 +121,24 @@ try {
   const destDir = "./_site";
   await Deno.mkdir(destDir, { recursive: true });
 
-  // Root: redirect to /catalog/
+  // Root: redirect to catalog/ (relative path for gh-pages subdirectory)
   const rootIndexContent = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Catalog</title>
-    <meta http-equiv="refresh" content="0; url=/catalog/" />
+    <meta http-equiv="refresh" content="0; url=catalog/" />
   </head>
   <body>
-    <p>Redirecting… <a href="/catalog/">/catalog/</a></p>
+    <p>Redirecting… <a href="catalog/">catalog/</a></p>
   </body>
 </html>
 `;
   await Deno.writeTextFile(`${destDir}/index.html`, rootIndexContent);
   console.log("Wrote _site/index.html");
 
-  // /catalog: redirect to /
+  // /catalog: redirect back to root (parent directory)
   await Deno.mkdir(`${destDir}/catalog`, { recursive: true });
   const catalogIndexContent = `<!doctype html>
 <html lang="en">
@@ -146,10 +146,10 @@ try {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Catalog</title>
-    <meta http-equiv="refresh" content="0; url=/" />
+    <meta http-equiv="refresh" content="0; url=../" />
   </head>
   <body>
-    <p>Redirecting… <a href="/">/</a></p>
+    <p>Redirecting… <a href="../">../</a></p>
   </body>
 </html>
 `;
