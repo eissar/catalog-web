@@ -1,5 +1,5 @@
 # Woodpecker CI configuration for catalog-web
-# Deploys the site to Cloudflare Pages
+# Deploys the site to Cloudflare Workers
 
 steps:
   build:
@@ -24,7 +24,7 @@ steps:
       CLOUDFLARE_API_TOKEN:
         from_secret: cloudflare_api_token
     commands:
-      - npx wrangler pages deploy _site --project-name=catalog-web
+      - npx wrangler deploy _site --name=catalog-web
 
 when:
   - event: [push, manual]

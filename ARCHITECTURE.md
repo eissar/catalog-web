@@ -8,7 +8,7 @@ Key features include:
 - **Deno-powered**: Leverages the Deno runtime for building and running the site.
 - **Full-text Search**: Integrated with **[PageFind](https://pagefind.app/)** for efficient, client-side search that is indexed at build time.
 - **Automated Deployment**: Continuous Integration and Deployment (CI/CD) via Woodpecker CI.
-- **Cloudflare Pages Hosting**: The site is deployed to Cloudflare Pages.
+- **Cloudflare Workers Hosting**: The site is deployed to Cloudflare Workers.
 
 ## CI/CD Pipeline (Woodpecker CI)
 
@@ -24,16 +24,16 @@ The automation pipeline is defined in `.woodpecker.yml`. The pipeline is trigger
     - It searches for `.html` files within the `_site/catalog/` path. If no files are found, the pipeline fails.
 3.  **Deploy (`deploy`)**:
     - Uses the `cloudflare_api_token` secret to authenticate with Cloudflare.
-    - Deploys the `_site/` directory to Cloudflare Pages using `wrangler`.
+    - Deploys the `_site/` directory to Cloudflare Workers using `wrangler`.
 
 ## Deployment & Monitoring
 
 ### Published URL
-The live site is deployed to Cloudflare Pages.
+The live site is deployed to Cloudflare Workers.
 
 ### How to check deployments
 - **Woodpecker CI Dashboard**: You can monitor the status of builds, validations, and deployments directly in your Woodpecker CI instance.
-- **Cloudflare Dashboard**: Check the Pages project to see deployment history and status.
+- **Cloudflare Dashboard**: Check the Workers project to see deployment history and status.
 - **Browser**: Simply refresh the published URL to see the latest changes after a successful pipeline run.
 
 ## Project Structure

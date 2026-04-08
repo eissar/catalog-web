@@ -83,11 +83,11 @@ The search bar (in the header of every page) is powered by **PageFind**:
 
 ## Deployment
 
-The site is automatically deployed to **Cloudflare Pages** using **Woodpecker CI**. When changes are pushed to the `master` branch, Woodpecker CI will:
+The site is automatically deployed to **Cloudflare Workers** using **Woodpecker CI**. When changes are pushed to the `master` branch, Woodpecker CI will:
 
 1. Build the site using Deno and Lume
 2. Validate that catalog files are present
-3. Deploy the built site to Cloudflare Pages using `wrangler`
+3. Deploy the built site to Cloudflare Workers using `wrangler`
 
 ### Woodpecker CI Setup
 
