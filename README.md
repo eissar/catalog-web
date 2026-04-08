@@ -83,20 +83,20 @@ The search bar (in the header of every page) is powered by **PageFind**:
 
 ## Deployment
 
-The site is automatically deployed to GitHub Pages using **Woodpecker CI**. When changes are pushed to the `main` branch, Woodpecker CI will:
+The site is automatically deployed to **Cloudflare Pages** using **Woodpecker CI**. When changes are pushed to the `master` branch, Woodpecker CI will:
 
 1. Build the site using Deno and Lume
 2. Validate that catalog files are present
-3. Deploy the built site to the `gh-pages` branch
+3. Deploy the built site to Cloudflare Pages using `wrangler`
 
 ### Woodpecker CI Setup
 
 To set up Woodpecker CI for this repository:
 
 1. **Enable Woodpecker CI** on your Woodpecker instance
-2. **Add the GitHub token secret**:
-   - Create a GitHub Personal Access Token with `repo` scope
-   - Add it as a secret named `github_token` in Woodpecker CI
+2. **Add the Cloudflare API token secret**:
+   - Create a Cloudflare API token with Pages deployment permissions
+   - Add it as a secret named `cloudflare_api_token` in Woodpecker CI
 
 3. **Configure the repository** in Woodpecker CI to use the `.woodpecker.yml` configuration
 
