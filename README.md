@@ -20,9 +20,10 @@ This sets `$DENO_HOME` to the Deno binary location. All commands below use this 
 $DENO_HOME task build
 ```
 
-This runs Lume, which:
-- Renders all `.md` files in `content/catalog/` using the layout in `content/_includes/default.njk`
-- Runs the **PageFind indexer** — outputs a static search index to `_site/pagefind/`
+This runs `build.ts`, which:
+1. Clones the external catalog repository (if not already present)
+2. Syncs `.md` files into `content/catalog/`, fixing frontmatter and injecting layouts
+3. Runs Lume, which renders pages, processes wikilinks, and runs the **PageFind indexer** — outputs a static search index to `_site/pagefind/`
 
 Output is written to `_site/` (symlinked to `/home/eissar/code/catalog-web/_site`).
 
@@ -37,14 +38,17 @@ $DENO_HOME task serve
 ```
 .
 ├── .env                  # DENO_HOME path (source this file)
-├── _config.ts            # Lume configuration (src = ./content)
+├── _config.ts            # Lume configuration (wikilinks, plugins, processors)
+├── build.ts              # Custom build script (clone catalog, sync, build)
+├── Dockerfile            # CI builder image (Deno + Node.js + Wrangler)
+├── wrangler.toml         # Cloudflare Workers deployment config
 ├── deno.json             # Deno tasks & permissions
 ├── content/
 │   ├── _includes/
 │   │   └── default.njk   # Default layout template (search bar + note styling)
-│   └── catalog/          # ← Your notes go here (nothing else!)
-│       └── example-page.md
-├── _site/                # → Build output (symlink)
+│   └── catalog/          # ← Synced from external catalog repo at build time
+├── catalog -> …/catalog  # Symlink to external catalog repo (git-ignored)
+├── _site -> …/_site      # Build output (symlink, git-ignored)
 └── README.md
 ```
 
@@ -72,6 +76,20 @@ The search bar (in the header of every page) is powered by **PageFind**:
 - Results appear instantly as you type (debounced 200ms)
 - Shows title + excerpt with highlighted matches
 
+## Wikilinks
+
+Notes can reference each other using `[[wikilink]]` syntax. Supported forms:
+
+| Syntax | Description |
+|---|---|
+| `[[Page Name]]` | Link to another note by title, slug, or filename |
+| `[[Page Name|Display Text]]` | Link with custom display text (rendered as `[Display Text]`) |
+| `[[Page Name#Heading]]` | Link to a specific heading within a note |
+
+- Resolved links get the `.wikilink` CSS class.
+- Unresolved links (broken) get the `.broken-link` class and appear greyed out with strikethrough.
+- Wikilink resolution matches against page `id`, `title`, `slug`, and URL path.
+
 ## Tasks
 
 | Command | Description |
@@ -95,9 +113,9 @@ To set up Woodpecker CI for this repository:
 
 1. **Enable Woodpecker CI** on your Woodpecker instance
 2. **Add the Cloudflare API token secret**:
-   - Create a Cloudflare API token with Pages deployment permissions
+   - Create a Cloudflare API token with Workers deployment permissions
    - Add it as a secret named `cloudflare_api_token` in Woodpecker CI
 
 3. **Configure the repository** in Woodpecker CI to use the `.woodpecker.yml` configuration
 
-The deployment pipeline is defined in `.woodpecker.yml` and handles the entire build and deployment process automatically.
+The deployment pipeline is defined in `.woodpecker.yml` and handles the entire build and deployment process automatically. Deployment settings (worker name, compatibility date, assets directory) are configured in `wrangler.toml`.
