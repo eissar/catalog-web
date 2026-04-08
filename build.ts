@@ -33,50 +33,50 @@ console.log(`Syncing ${CATALOG_DIR} → ${CONTENT_CATALOG_DIR} ...`);
 // Ensure content/catalog/ exists
 await Deno.mkdir(CONTENT_CATALOG_DIR, { recursive: true });
 
-// First, clean up any existing files/symlinks in content/catalog/
+// Clean up any existing files/symlinks in content/catalog/
 for await (const entry of Deno.readDir(CONTENT_CATALOG_DIR)) {
   const filePath = `${CONTENT_CATALOG_DIR}/${entry.name}`;
   await Deno.remove(filePath);
 }
 
 // Read all .md files from the catalog source
-let fileCount = 0;
-// Collect markdown entries
-const entries = [];
+const entries: { name: string; isFile: boolean }[] = [];
 for await (const entry of Deno.readDir(CATALOG_DIR)) {
   if (entry.isFile && entry.name.endsWith(".md")) {
-    entries.push(entry);
+    entries.push({ name: entry.name, isFile: entry.isFile });
   }
 }
-// Copy files in parallel using Promise.all
-await Promise.all(entries.map(async (entry) => {
-  const srcPath = `${CATALOG_DIR}/${entry.name}`;
-  const destPath = `${CONTENT_CATALOG_DIR}/${entry.name}`;
-  let content = await Deno.readTextFile(srcPath);
-  
-  // Fix date format issues in front matter
-  // Replace quoted dates with proper date format
-  content = content.replace(/date:\s*"([^"]+)"/g, 'date: $1');
-  content = content.replace(/lastmod:\s*"([^"]+)"/g, 'lastmod: $1');
-  
-  // Inject layout frontmatter if not present
-  if (!content.includes('layout:')) {
-    // Check if file already has frontmatter
-    if (content.startsWith('---')) {
-      // Add layout to existing frontmatter
-      content = content.replace(/^---\s*\n/, '---\nlayout: default.njk\n');
-    } else {
-      // Add frontmatter with layout
-      content = `---\nlayout: default.njk\n---\n\n${content}`;
-    }
-  }
-  
-  // Copy the file
-  await Deno.writeTextFile(destPath, content);
-  console.log(`  Synced: ${entry.name}`);
-}));
-fileCount = entries.length;
 
+// Copy files in parallel using Promise.all
+await Promise.all(
+  entries.map(async (entry) => {
+    const srcPath = `${CATALOG_DIR}/${entry.name}`;
+    const destPath = `${CONTENT_CATALOG_DIR}/${entry.name}`;
+    let content = await Deno.readTextFile(srcPath);
+
+    // Fix date format issues in front matter
+    content = content.replace(/date:\s*"([^"]+)"/g, "date: $1");
+    content = content.replace(/lastmod:\s*"([^"]+)"/g, "lastmod: $1");
+
+    // Inject layout frontmatter if not present
+    if (!content.includes("layout:")) {
+      // Check if file already has frontmatter
+      if (content.startsWith("---")) {
+        // Add layout to existing frontmatter
+        content = content.replace(/^---\s*\n/, "---\nlayout: default.njk\n");
+      } else {
+        // Add frontmatter with layout
+        content = `---\nlayout: default.njk\n---\n\n${content}`;
+      }
+    }
+
+    // Copy the file
+    await Deno.writeTextFile(destPath, content);
+    console.log(`  Synced: ${entry.name}`);
+  }),
+);
+
+const fileCount = entries.length;
 console.log(`Synced ${fileCount} files`);
 
 // Assert that at least one file exists in the catalog directory
@@ -86,13 +86,11 @@ if (fileCount === 0) {
 }
 
 // Ensure at least one copied file resides in a catalog path
-const catalogFiles = entries.filter(entry => `${CONTENT_CATALOG_DIR}/${entry.name}`.includes('/catalog'));
+const catalogFiles = entries.filter((entry) => `${CONTENT_CATALOG_DIR}/${entry.name}`.includes("/catalog"));
 if (catalogFiles.length === 0) {
   console.error('Error: No copied files contain "/catalog" in their path.');
   Deno.exit(1);
 }
-
-// Run Lume build
 
 // Run Lume build
 console.log(`Building site...`);
@@ -105,7 +103,7 @@ const deno = new Deno.Command(Deno.execPath(), {
     "--allow-run",
     "--allow-net",
     "--allow-sys",
-    "lume/cli.ts"
+    "lume/cli.ts",
   ],
   stdout: "inherit",
   stderr: "inherit",
@@ -116,22 +114,47 @@ if (!buildResult.success) {
 }
 console.log("Build complete!");
 
-// Ensure root-level index.html is available in build output.
-// GitHub Pages expects an /index.html at the site root.
+// Ensure GitHub Pages has root + /catalog entries.
+// Pages does not know about Lume's 404 fallback; it serves static files.
+// We therefore create explicit redirect pages.
 try {
-  // build output is at ./_site (symlinked in this repo), but the Lume build
-  // can overwrite it; so we write after the Lume build completes.
-  const srcIndex = "./index.html";
-  const destIndex = "./_site/index.html";
-  const srcStat = await Deno.stat(srcIndex);
-  if (srcStat.isFile) {
-    const destDir = "./_site";
-    await Deno.mkdir(destDir, { recursive: true });
-    const content = await Deno.readTextFile(srcIndex);
-    await Deno.writeTextFile(destIndex, content);
-    console.log("Copied root index.html → _site/");
-  }
-} catch (err) {
-  // Non-fatal: site still builds even if index.html isn't present.
-  console.log("No root index.html to copy into _site/ (skipping).");
+  const destDir = "./_site";
+  await Deno.mkdir(destDir, { recursive: true });
+
+  // Root: redirect to /catalog/
+  const rootIndexContent = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catalog</title>
+    <meta http-equiv="refresh" content="0; url=/catalog/" />
+  </head>
+  <body>
+    <p>Redirecting… <a href="/catalog/">/catalog/</a></p>
+  </body>
+</html>
+`;
+  await Deno.writeTextFile(`${destDir}/index.html`, rootIndexContent);
+  console.log("Wrote _site/index.html");
+
+  // /catalog: redirect to /
+  await Deno.mkdir(`${destDir}/catalog`, { recursive: true });
+  const catalogIndexContent = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Catalog</title>
+    <meta http-equiv="refresh" content="0; url=/" />
+  </head>
+  <body>
+    <p>Redirecting… <a href="/">/</a></p>
+  </body>
+</html>
+`;
+  await Deno.writeTextFile(`${destDir}/catalog/index.html`, catalogIndexContent);
+  console.log("Wrote _site/catalog/index.html");
+} catch {
+  console.log("No root/catalog redirect pages could be written (non-fatal). ");
 }
