@@ -8,3 +8,9 @@ _cache
 
 # Ignore synced catalog content (generated during build)
 /content/catalog
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example
+!.env.example
