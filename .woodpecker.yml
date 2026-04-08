@@ -24,7 +24,7 @@ steps:
       CLOUDFLARE_API_TOKEN:
         from_secret: cloudflare_api_token
     commands:
-      - npx wrangler deploy
+      - wrangler deploy
 
 when:
   - event: [push, manual]
