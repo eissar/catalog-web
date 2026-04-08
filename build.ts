@@ -115,3 +115,23 @@ if (!buildResult.success) {
   Deno.exit(buildResult.code);
 }
 console.log("Build complete!");
+
+// Ensure root-level index.html is available in build output.
+// GitHub Pages expects an /index.html at the site root.
+try {
+  // build output is at ./_site (symlinked in this repo), but the Lume build
+  // can overwrite it; so we write after the Lume build completes.
+  const srcIndex = "./index.html";
+  const destIndex = "./_site/index.html";
+  const srcStat = await Deno.stat(srcIndex);
+  if (srcStat.isFile) {
+    const destDir = "./_site";
+    await Deno.mkdir(destDir, { recursive: true });
+    const content = await Deno.readTextFile(srcIndex);
+    await Deno.writeTextFile(destIndex, content);
+    console.log("Copied root index.html → _site/");
+  }
+} catch (err) {
+  // Non-fatal: site still builds even if index.html isn't present.
+  console.log("No root index.html to copy into _site/ (skipping).");
+}
