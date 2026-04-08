@@ -1,5 +1,5 @@
 FROM denoland/deno:alpine
-RUN apk add --no-cache git rsync
+RUN apk add --no-cache git rsync nodejs npm
 
 WORKDIR /app
 COPY deno.json .
