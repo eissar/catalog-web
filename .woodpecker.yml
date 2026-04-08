@@ -24,7 +24,7 @@ steps:
       CLOUDFLARE_API_TOKEN:
         from_secret: cloudflare_api_token
     commands:
-      - npx wrangler deploy _site --name=catalog-web
+      - npx wrangler deploy --assets=./_site --name=catalog-web
 
 when:
   - event: [push, manual]
