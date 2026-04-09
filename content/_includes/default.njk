@@ -67,12 +67,12 @@
       max-width: 960px;
       margin: 0 auto 4rem;
       display: grid;
-      grid-template-columns: 220px 1fr;
+      grid-template-columns: 1fr 220px;
       gap: 1.5rem;
       align-items: start;
     }
     
-    /* Metadata panel on left */
+    /* Metadata panel on right */
     .metadata-panel {
       background: var(--color-surface);
       border: 1px solid var(--color-border);
@@ -252,9 +252,42 @@
     </div>
   </header>
 
-  <!-- ── Note Layout: Metadata Panel + Content ── -->
+  <!-- ── Note Layout: Content + Metadata Panel ── -->
   <div class="note-layout">
-    <!-- ── Metadata Panel (Left Sidebar) ── -->
+    <!-- ── Note Content ── -->
+    <main class="note-container">
+    {{ content | safe }}
+
+    {% if isMap and backlinks and backlinks.length %}
+    <section class="map-backlinks">
+      <h2>Notes in this category</h2>
+      <ul>
+        {% for note in backlinks %}
+        <li><a href="{{ note.url }}">{{ note.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if footnotes and footnotes.length %}
+    <section class="footnotes">
+      <h3>Footnotes</h3>
+      <ol>
+        {% for note in footnotes %}
+        <li id="{{ note.id }}">{{ note.content | safe }}
+          {% if note.refId %}
+          <span class="footnote-backrefs">
+            <a href="#{{ note.refId }}" class="footnote-backref" aria-label="Back to reference">↩</a>
+          </span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% endif %}
+  </main>
+
+    <!-- ── Metadata Panel (Right Sidebar) ── -->
     <aside class="metadata-panel">
       <h3>Metadata</h3>
       
@@ -346,39 +379,6 @@
       </div>
       {% endif %}
     </aside>
-
-    <!-- ── Note Content ── -->
-    <main class="note-container">
-    {{ content | safe }}
-
-    {% if isMap and backlinks and backlinks.length %}
-    <section class="map-backlinks">
-      <h2>Notes in this category</h2>
-      <ul>
-        {% for note in backlinks %}
-        <li><a href="{{ note.url }}">{{ note.title }}</a></li>
-        {% endfor %}
-      </ul>
-    </section>
-    {% endif %}
-
-    {% if footnotes and footnotes.length %}
-    <section class="footnotes">
-      <h3>Footnotes</h3>
-      <ol>
-        {% for note in footnotes %}
-        <li id="{{ note.id }}">{{ note.content | safe }}
-          {% if note.refId %}
-          <span class="footnote-backrefs">
-            <a href="#{{ note.refId }}" class="footnote-backref" aria-label="Back to reference">↩</a>
-          </span>
-          {% endif %}
-        </li>
-        {% endfor %}
-      </ol>
-    </section>
-    {% endif %}
-  </main>
   </div><!-- /.note-layout -->
 
   <!-- PageFind search bundle (output by the Lume pagefind plugin) -->
