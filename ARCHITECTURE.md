@@ -53,6 +53,170 @@ The live site is deployed to Cloudflare Workers. The `wrangler.toml` file config
 - **Cloudflare Dashboard**: Check the Workers project to see deployment history and status.
 - **Browser**: Simply refresh the published URL to see the latest changes after a successful pipeline run.
 
+## Note Naming System (Zettelkasten)
+
+The static site generator renders a **Zettelkasten** — a flat-file catalog of notes where categories are derived from the filename schema rather than directory structure.
+
+### Filename Format
+
+```
+<name>.<category>.md
+```
+
+Examples:
+- `delegation.philosophy.md` → Note named "delegation" in the "philosophy" category
+- `ontology.metaphysics.md` → Note named "ontology" in the "metaphysics" category
+- `reflection.practice.md` → Note named "reflection" in the "practice" category
+
+### Category Derivation
+
+Categories are **not** directories; they are encoded in the filename itself. This enables:
+- Flat file storage (all notes in a single directory)
+- Flexible categorization without nested folder hierarchies
+- Easy recategorization by renaming files
+
+### Map Files (Special Category)
+
+The `map` category has special semantic meaning. A file named:
+
+```
+<category>.map.md
+```
+
+represents a **parent/index node** for that category. It serves as a hierarchical anchor in the otherwise flat structure.
+
+**Example:**
+- `philosophy.map.md` → Parent node for the "philosophy" category
+
+**Backlinking Rule:**
+A map file should automatically backlink to any note whose category includes the map's name:
+- `philosophy.map.md` links to all `*.philosophy.md` notes
+- `practice.map.md` links to all `*.practice.md` notes
+
+This creates a navigable hierarchy: visiting `philosophy.map` shows all philosophy-related notes.
+
+## Proposed Backlinking Implementation Methods
+
+There are several approaches to implement automatic backlinking from map files to their category notes:
+
+### Method 1: Build-Time Injection (Recommended)
+
+Modify `build.ts` to inject backlinks into map files during the sync phase:
+
+1. **First pass**: Collect all note filenames and extract categories
+2. **Second pass**: For each `*.map.md` file:
+   - Extract the category name from the filename (e.g., `philosophy.map.md` → `philosophy`)
+   - Find all files matching `*.<category>.md`
+   - Inject a backlinks section into the file content before writing
+
+**Pros**: 
+- Simple, single-pass processing
+- No Lume plugin complexity
+- Backlinks are baked into the content permanently
+
+**Cons**: 
+- Requires two-pass file processing
+- Backlinks only update on rebuild
+
+### Method 2: Lume Plugin (Data Extension)
+
+Create a Lume preprocessor in `_config.ts` that:
+
+1. Registers a `preprocess` hook for `.md` files
+2. Builds a category index from all page data
+3. For map files, dynamically adds a `backlinks` data property
+4. Renders backlinks via the template (Nunjucks)
+
+```typescript
+// Pseudo-code
+site.preprocess([".md"], (pages) => {
+  // Build category → pages mapping
+  const categoryIndex = buildCategoryIndex(pages);
+  
+  for (const page of pages) {
+    if (isMapFile(page)) {
+      const category = extractCategory(page);
+      page.data.backlinks = categoryIndex[category] || [];
+    }
+  }
+});
+```
+
+**Pros**:
+- Cleaner separation of concerns
+- Template can control rendering
+- Works with Lume's data pipeline
+
+**Cons**:
+- More complex plugin code
+- Requires understanding Lume's data lifecycle
+
+### Method 3: Lume Renderer (Post-Process)
+
+Add a post-processor in `_config.ts` that modifies rendered HTML:
+
+1. After HTML generation, parse all pages
+2. Build category index from rendered pages
+3. For map file HTML, inject a backlinks section into the body
+
+```typescript
+site.process([".html"], (pages) => {
+  const categoryIndex = buildCategoryIndex(pages);
+  
+  for (const page of pages) {
+    if (isMapFile(page)) {
+      const backlinks = generateBacklinksHTML(categoryIndex, page);
+      injectIntoBody(page, backlinks);
+    }
+  }
+});
+```
+
+**Pros**:
+- Works with existing wikilink processor
+- Can leverage full HTML context
+
+**Cons**:
+- Operates on rendered HTML (harder to debug)
+- May conflict with existing processors
+
+### Method 4: Hybrid Approach (Frontmatter + Template)
+
+Modify `build.ts` to inject category metadata into frontmatter:
+
+```yaml
+---
+layout: default.njk
+category: philosophy
+is_map: true
+---
+```
+
+Then create a Nunjucks template (`default.njk`) that:
+
+1. Checks if `is_map` is true
+2. Uses Lume's `search` plugin to find related pages
+3. Renders backlinks section dynamically
+
+**Pros**:
+- Declarative approach
+- Template controls presentation
+- Easy to extend with other metadata
+
+**Cons**:
+- Requires Lume search plugin configuration
+- More template complexity
+
+### Recommendation
+
+**Method 1 (Build-Time Injection)** is recommended for initial implementation because:
+- It's the simplest to implement and debug
+- It doesn't require deep Lume plugin knowledge
+- The backlinks are part of the content, making them searchable by PageFind
+- It follows the existing pattern of content modification in `build.ts`
+
+Future iterations could migrate to **Method 2** or **Method 4** for more dynamic behavior.
+
 ## Project Structure
 
 ```text
