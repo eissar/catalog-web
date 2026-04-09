@@ -42,17 +42,19 @@ site.use(references());
 
 **Template Implementation**:
 ```html
+{# the `references` array is injected into the page context by the plugin #}
 {% if references and references.length %}
 <div class="backlinks">
   <h3>Backlinks</h3>
   <ul>
-    {% for link in search.pages(`references*='${url}'`) %}
+    {% for link in references %}
     <li><a href="{{ link.url }}">{{ link.title }}</a></li>
     {% endfor %}
   </ul>
 </div>
 {% endif %}
 ```
+_Notes_: The plugin exposes `references` alongside each page, so search helpers are not required unless filtering additional metadata. Ensure this block renders after the wikilinks processor to prevent missing link targets.
 
 #### 2. Footnotes Plugin
 **Importance**: High
@@ -66,6 +68,7 @@ site.use(footnotes());
 
 **Template Implementation**:
 ```html
+{# `footnotes` is emitted by the plugin with `id`, `refId`, and `content` #}
 {% if footnotes and footnotes.length %}
 <section class="footnotes">
   <h3>Footnotes</h3>
@@ -77,6 +80,7 @@ site.use(footnotes());
 </section>
 {% endif %}
 ```
+_Notes_: Pair this section with the footnote reference rendering earlier in the document so readers can jump back to the citation location. Validate that the plugin generates `refId` values matching the actual reference anchors.
 
 ### Priority 2: Useful Enhancements
 
@@ -119,6 +123,13 @@ site.use(title());
 #### markdown-it-attrs (Already included)
 **Purpose**: Custom element attributes
 **Zettelkasten Value**: Styling flexibility
+
+## Integration Considerations
+
+1. **Plugin Order**: `references` and `footnotes` must run after wikilinks resolution to correctly capture generated URLs and IDs. `toc` and `title` can execute before wikilinks but should remain after generic markdown parsing so they benefit from normalized headers.
+2. **Markdown-it Options**: Ensure the markdown-it instance enables `html`, `linkify`, and `typographer` so anchors and TOC markup render faithfully. Where `markdown-plugins` exposes configuration, specify `toc.levels` or `title.firstHeader` if the default behavior does not align with Catalog Web conventions.
+3. **Template Data Context**: The plugins inject arrays/objects (`references`, `footnotes`, `toc`, `title`) into each page’s context. Confirm these keys do not collide with existing custom data to avoid overwriting critical values such as `page.metadata`. Wrap template blocks with `{% if %}` guards and include fallback messaging for empty states.
+4. **Wikilinks Interplay**: Continue using the existing `_config.ts` wikilinks resolver (`site.use(wikilinks())` or custom middleware). If markdown-it plugins emit URLs that the wikilinks logic would otherwise manipulate, ensure deduplication or canonicalization is consistent.
 
 ## Implementation Plan
 
