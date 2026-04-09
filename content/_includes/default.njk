@@ -103,6 +103,41 @@
       text-decoration: line-through;
     }
 
+    /* Map backlinks section */
+    .note-container .map-backlinks {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--color-border);
+    }
+    .note-container .map-backlinks h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      color: var(--color-text);
+    }
+    .note-container .map-backlinks ul {
+      list-style: none;
+      padding-left: 0;
+    }
+    .note-container .map-backlinks li {
+      margin-bottom: 0.5rem;
+      padding-left: 1rem;
+      position: relative;
+    }
+    .note-container .map-backlinks li::before {
+      content: "→";
+      position: absolute;
+      left: 0;
+      color: var(--color-accent);
+    }
+    .note-container .map-backlinks a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+    .note-container .map-backlinks a:hover {
+      text-decoration: underline;
+    }
+
     @media (max-width: 600px) { .note-container { padding: 1.25rem; } .site-header { margin-top: 1.25rem; } }
   </style>
 </head>
@@ -130,6 +165,17 @@
   <!-- ── Note Content ── -->
   <main class="note-container">
     {{ content | safe }}
+
+    {% if isMap and backlinks and backlinks.length %}
+    <section class="map-backlinks">
+      <h2>Notes in this category</h2>
+      <ul>
+        {% for note in backlinks %}
+        <li><a href="{{ note.url }}">{{ note.title }}</a></li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
 
     {% if footnotes and footnotes.length %}
     <section class="footnotes">

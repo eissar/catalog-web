@@ -19,6 +19,113 @@ site.use(nunjucks());
 // Enable PageFind for static search indexing
 site.use(pagefind());
 
+// ============================================================================
+// Zettelkasten Note Naming System
+// ============================================================================
+// Filename format: <name>.<category>.md
+// - delegation.philosophy.md → Note "delegation" in category "philosophy"
+// - automation.map.md → Map file for the "automation" category
+//
+// Map files (<category>.map.md) are parent/index nodes that should backlink
+// to all notes in that category (e.g., automation.map.md → *.automation.md)
+
+interface NoteInfo {
+  name: string;      // Note name (e.g., "delegation")
+  category: string;  // Category (e.g., "philosophy")
+  title: string;     // Display title
+  url: string;       // Page URL
+  isMap: boolean;    // Whether this is a map file
+}
+
+/**
+ * Parse a filename to extract note name and category.
+ * Format: <name>.<category>.md
+ * Examples:
+ *   - "delegation.philosophy.md" → { name: "delegation", category: "philosophy" }
+ *   - "automation.map.md" → { name: "automation", category: "map" }
+ */
+function parseNoteFilename(filename: string): { name: string; category: string } | null {
+  // Remove .md extension
+  const base = filename.replace(/\.md$/, "");
+  const parts = base.split(".");
+  
+  if (parts.length < 2) {
+    return null; // Doesn't match the naming convention
+  }
+  
+  const category = parts.pop()!; // Last part is category
+  const name = parts.join(".");   // Everything else is the name (handles dots in name)
+  
+  return { name, category };
+}
+
+/**
+ * Build an index mapping categories to their notes.
+ * Map files are excluded from this index (they reference notes, not the other way).
+ */
+function buildCategoryIndex(pages: any[]): Map<string, NoteInfo[]> {
+  const index = new Map<string, NoteInfo[]>();
+  
+  for (const page of pages) {
+    const url = page.data.url as string | undefined;
+    if (!url) continue;
+    
+    // Get the source file basename
+    const srcPath = page.src?.path as string | undefined;
+    if (!srcPath) continue;
+    
+    const filename = srcPath.split("/").pop()!;
+    const parsed = parseNoteFilename(filename);
+    
+    if (!parsed) continue;
+    
+    const { name, category } = parsed;
+    const isMap = category === "map";
+    
+    // Get title from frontmatter or derive from name
+    const title = (page.data.title as string) || name;
+    
+    const noteInfo: NoteInfo = { name, category, title, url, isMap };
+    
+    // Add to category index (skip map files - they're parents, not children)
+    if (!isMap) {
+      const existing = index.get(category) || [];
+      existing.push(noteInfo);
+      index.set(category, existing);
+    }
+  }
+  
+  return index;
+}
+
+// Preprocessor to add backlinks data to map files
+site.preprocess([".md"], (pages) => {
+  // Build the category → notes index
+  const categoryIndex = buildCategoryIndex(pages);
+  
+  for (const page of pages) {
+    const srcPath = page.src?.path as string | undefined;
+    if (!srcPath) continue;
+    
+    const filename = srcPath.split("/").pop()!;
+    const parsed = parseNoteFilename(filename);
+    
+    if (!parsed || parsed.category !== "map") continue;
+    
+    // This is a map file - add backlinks to notes in this category
+    const mapCategory = parsed.name; // For map files, the name IS the category
+    const backlinks = categoryIndex.get(mapCategory) || [];
+    
+    // Sort backlinks alphabetically by title
+    backlinks.sort((a, b) => a.title.localeCompare(b.title));
+    
+    // Add to page data for template access
+    page.data.backlinks = backlinks;
+    page.data.isMap = true;
+    page.data.mapCategory = mapCategory;
+  }
+});
+
 // Wikilink regex pattern: [[page]] or [[page#heading]] or [[page|Display Text]]
 const wikilinkPattern = /\[\[([^\]|#]+)(?:#([^|\]]+))?(?:\|([^\]]+))?\]\]/g;
 

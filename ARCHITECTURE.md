@@ -217,6 +217,31 @@ Then create a Nunjucks template (`default.njk`) that:
 
 Future iterations could migrate to **Method 2** or **Method 4** for more dynamic behavior.
 
+## Implementation Status
+
+### Method 2: Lume Preprocessor (Implemented)
+
+The backlinking system has been implemented using **Method 2** (Lume Preprocessor) in `_config.ts`:
+
+**Components:**
+1. **`parseNoteFilename()`** - Parses filenames to extract note name and category
+2. **`buildCategoryIndex()`** - Builds a `Map<string, NoteInfo[]>` mapping categories to notes
+3. **Preprocessor hook** - Runs on `.md` files, adds `backlinks`, `isMap`, and `mapCategory` data to map files
+
+**Template Integration:**
+- `default.njk` renders a "Notes in this category" section for map files with backlinks
+- CSS styling provided for `.map-backlinks` section
+
+**How it works:**
+1. During Lume's preprocess phase, all pages are scanned
+2. Files matching `<name>.<category>.md` are indexed by category
+3. Map files (`<category>.map.md`) receive a `backlinks` array containing all notes in that category
+4. The template renders the backlinks as a styled list
+
+**Example:**
+- `automation.map.md` → Shows all `*.automation.md` notes
+- `philosophy.map.md` → Shows all `*.philosophy.md` notes (excluding drafts)
+
 ## Project Structure
 
 ```text
