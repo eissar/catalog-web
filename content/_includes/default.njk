@@ -312,12 +312,9 @@
     <aside class="notes-list-panel">
       <h3>Notes</h3>
       <ul class="notes-list">
-        <li><a href="/catalog/snippets.userchrome-js/" title="snippets.userchrome-js">snippets.userchrome-js</a></li>
-        <li><a href="/catalog/delegation.philosophy/" title="delegation.philosophy">delegation.philosophy</a></li>
-        <li><a href="/catalog/empathy-machine/" title="empathy-machine">empathy-machine</a></li>
-        <li><a href="/catalog/shounen-manga.writing/" title="shounen-manga.writing">shounen-manga.writing</a></li>
-        <li><a href="/catalog/test.automation/" title="test.automation">test.automation</a></li>
-        <li><a href="/catalog/automation.map/" title="automation.map">automation.map</a></li>
+        {% for note in catalogNotes %}
+        <li><a href="{{ note.url }}" title="{{ note.name }}">{{ note.title }}</a></li>
+        {% endfor %}
       </ul>
     </aside>
 

@@ -133,8 +133,8 @@ function buildCategoryIndex(pages: any[]): Map<string, NoteInfo[]> {
   return index;
 }
 
-// Processor to add backlinks data to map files and metadata to all notes
-site.process([".html"], (pages) => {
+// Preprocessor to add backlinks data to map files and metadata to all notes
+site.preprocess([".md"], (pages) => {
   // Build the category → notes index
   const categoryIndex = buildCategoryIndex(pages);
   
@@ -185,6 +185,10 @@ site.process([".html"], (pages) => {
   catalogNotes.sort((a, b) => a.title.localeCompare(b.title));
   
   // Add catalog notes to all pages for navigation
+  console.log(`Setting catalogNotes on ${pages.length} pages`);
+  console.log(`catalogNotes contains ${catalogNotes.length} notes:`);
+  catalogNotes.forEach(note => console.log(`  - ${note.title} (${note.url})`));
+  
   for (const page of pages) {
     page.data.catalogNotes = catalogNotes;
   }
