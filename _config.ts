@@ -77,8 +77,14 @@ interface NoteInfo {
  *   - "delegation.philosophy.md" → { name: "delegation", category: "philosophy" }
  *   - "automation.map.md" → { name: "automation", category: "map" }
  *   - "empathy-machine.md" → { name: "empathy-machine", category: "uncategorized" }
+ *   - "index.njk" → null (not a catalog note)
  */
 function parseNoteFilename(filename: string): { name: string; category: string } | null {
+  // Only process .md files
+  if (!filename.endsWith(".md")) {
+    return null;
+  }
+  
   // Remove .md extension
   const base = filename.replace(/\.md$/, "");
   const parts = base.split(".");
@@ -107,9 +113,11 @@ function buildCategoryIndex(pages: any[]): Map<string, NoteInfo[]> {
     
     // Get the source file basename
     const srcPath = page.src?.path as string | undefined;
+    const srcExt = page.src?.ext as string | undefined;
     if (!srcPath) continue;
     
-    const filename = srcPath.split("/").pop()!;
+    // Reconstruct filename with extension
+    const filename = srcPath.split("/").pop()! + (srcExt || "");
     const parsed = parseNoteFilename(filename);
     
     if (!parsed) continue;
@@ -134,8 +142,9 @@ function buildCategoryIndex(pages: any[]): Map<string, NoteInfo[]> {
 }
 
 // Preprocessor to add backlinks data to map files and metadata to all notes
-site.preprocess([".md"], (pages) => {
-  // Build the category → notes index
+// Use "*" to run for all page types, so catalogNotes is available to .njk and .md pages alike
+site.preprocess("*", (pages) => {
+  // Build the category → notes index from all pages
   const categoryIndex = buildCategoryIndex(pages);
   
   // Build a flat list of all catalog notes for navigation
@@ -143,9 +152,11 @@ site.preprocess([".md"], (pages) => {
   
   for (const page of pages) {
     const srcPath = page.src?.path as string | undefined;
+    const srcExt = page.src?.ext as string | undefined;
     if (!srcPath) continue;
     
-    const filename = srcPath.split("/").pop()!;
+    // Reconstruct filename with extension
+    const filename = srcPath.split("/").pop()! + (srcExt || "");
     const parsed = parseNoteFilename(filename);
     
     if (!parsed) continue;
@@ -185,10 +196,6 @@ site.preprocess([".md"], (pages) => {
   catalogNotes.sort((a, b) => a.title.localeCompare(b.title));
   
   // Add catalog notes to all pages for navigation
-  console.log(`Setting catalogNotes on ${pages.length} pages`);
-  console.log(`catalogNotes contains ${catalogNotes.length} notes:`);
-  catalogNotes.forEach(note => console.log(`  - ${note.title} (${note.url})`));
-  
   for (const page of pages) {
     page.data.catalogNotes = catalogNotes;
   }
