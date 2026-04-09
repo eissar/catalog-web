@@ -16,6 +16,27 @@ site.use(footnotes());
 // Enable Nunjucks templating for .njk layout files
 site.use(nunjucks());
 
+// Add custom filter for formatting Git dates
+site.filter("formatGitDate", (dateString: string) => {
+  if (!dateString) return "Unknown";
+  
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZoneName: "short"
+    });
+  } catch (error) {
+    console.warn("Failed to parse date:", dateString, error);
+    return dateString;
+  }
+});
+
 // Enable PageFind for static search indexing
 site.use(pagefind());
 

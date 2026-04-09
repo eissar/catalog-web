@@ -296,14 +296,24 @@
       </div>
       {% endif %}
       
-      {% if date %}
+      {% if gitModified %}
+      <div class="metadata-item">
+        <div class="metadata-label">Date</div>
+        <div class="metadata-value">{{ gitModified | formatGitDate }}</div>
+      </div>
+      {% elif date %}
       <div class="metadata-item">
         <div class="metadata-label">Date</div>
         <div class="metadata-value">{{ date }}</div>
       </div>
       {% endif %}
       
-      {% if lastmod %}
+      {% if gitModified %}
+      <div class="metadata-item">
+        <div class="metadata-label">Last Modified</div>
+        <div class="metadata-value">{{ gitModified | formatGitDate }}</div>
+      </div>
+      {% elif lastmod %}
       <div class="metadata-item">
         <div class="metadata-label">Last Modified</div>
         <div class="metadata-value">{{ lastmod }}</div>
@@ -314,6 +324,20 @@
       <div class="metadata-item">
         <div class="metadata-label">Tags</div>
         <div class="metadata-value">{{ tags | join(", ") }}</div>
+      </div>
+      {% endif %}
+      
+      {% if gitCreated or gitModified %}
+      <div class="metadata-item">
+        <div class="metadata-label">GitHub</div>
+        <div class="metadata-value">
+          {% if gitCreated %}
+          <div style="margin-bottom: 0.25rem;">Created: {{ gitCreated | formatGitDate }}</div>
+          {% endif %}
+          {% if gitModified %}
+          <div>Modified: {{ gitModified | formatGitDate }}</div>
+          {% endif %}
+        </div>
       </div>
       {% endif %}
     </aside>

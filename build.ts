@@ -4,6 +4,48 @@
 const CATALOG_DIR = Deno.env.get("CATALOG_DIR") ?? "./catalog";
 const CONTENT_CATALOG_DIR = "./content/catalog";
 
+/**
+ * Get Git creation and modification dates for a file
+ */
+async function getGitDates(repoPath: string, filename: string): Promise<{ created: string; modified: string }> {
+  try {
+    // Get creation date (first commit)
+    const createdCmd = new Deno.Command("git", {
+      args: ["log", "--reverse", "--pretty=format:%ad", "--date=iso", "--", filename],
+      cwd: repoPath,
+      stdout: "piped",
+      stderr: "piped",
+    });
+    const createdResult = await createdCmd.output();
+    const createdOutput = new TextDecoder().decode(createdResult.stdout).trim();
+    const createdDate = createdOutput.split('\n')[0] || new Date().toISOString();
+    
+    // Get modification date (last commit)
+    const modifiedCmd = new Deno.Command("git", {
+      args: ["log", "-1", "--pretty=format:%ad", "--date=iso", "--", filename],
+      cwd: repoPath,
+      stdout: "piped",
+      stderr: "piped",
+    });
+    const modifiedResult = await modifiedCmd.output();
+    const modifiedOutput = new TextDecoder().decode(modifiedResult.stdout).trim();
+    const modifiedDate = modifiedOutput || new Date().toISOString();
+    
+    return {
+      created: createdDate,
+      modified: modifiedDate
+    };
+  } catch (error) {
+    console.warn(`Failed to get Git dates for ${filename}:`, error);
+    // Fallback to current date if Git fails
+    const now = new Date().toISOString();
+    return {
+      created: now,
+      modified: now
+    };
+  }
+}
+
 // Ensure catalog directory exists; clone if missing
 try {
   const stat = await Deno.stat(CATALOG_DIR);
@@ -58,15 +100,44 @@ await Promise.all(
     content = content.replace(/date:\s*"([^"]+)"/g, "date: $1");
     content = content.replace(/lastmod:\s*"([^"]+)"/g, "lastmod: $1");
 
+    // Get Git dates for the file
+    const gitDates = await getGitDates(CATALOG_DIR, entry.name);
+    
     // Inject layout frontmatter if not present
     if (!content.includes("layout:")) {
       // Check if file already has frontmatter
       if (content.startsWith("---")) {
-        // Add layout to existing frontmatter
-        content = content.replace(/^---\s*\n/, "---\nlayout: default.njk\n");
+        // Add layout and Git dates to existing frontmatter
+        let frontmatterEnd = content.indexOf("\n---", 3);
+        if (frontmatterEnd === -1) {
+          frontmatterEnd = content.indexOf("\n---\n", 3);
+        }
+        
+        if (frontmatterEnd !== -1) {
+          const before = content.substring(0, frontmatterEnd);
+          const after = content.substring(frontmatterEnd);
+          content = `${before}\nlayout: default.njk\ngitCreated: "${gitDates.created}"\ngitModified: "${gitDates.modified}"${after}`;
+        } else {
+          // Fallback if frontmatter parsing fails
+          content = `---\nlayout: default.njk\ngitCreated: "${gitDates.created}"\ngitModified: "${gitDates.modified}"\n---\n\n${content}`;
+        }
       } else {
-        // Add frontmatter with layout
-        content = `---\nlayout: default.njk\n---\n\n${content}`;
+        // Add frontmatter with layout and Git dates
+        content = `---\nlayout: default.njk\ngitCreated: "${gitDates.created}"\ngitModified: "${gitDates.modified}"\n---\n\n${content}`;
+      }
+    } else {
+      // File already has layout, just add Git dates to existing frontmatter
+      if (content.startsWith("---")) {
+        let frontmatterEnd = content.indexOf("\n---", 3);
+        if (frontmatterEnd === -1) {
+          frontmatterEnd = content.indexOf("\n---\n", 3);
+        }
+        
+        if (frontmatterEnd !== -1) {
+          const before = content.substring(0, frontmatterEnd);
+          const after = content.substring(frontmatterEnd);
+          content = `${before}\ngitCreated: "${gitDates.created}"\ngitModified: "${gitDates.modified}"${after}`;
+        }
       }
     }
 
