@@ -1,6 +1,7 @@
 import lume from "lume/mod.ts";
 import pagefind from "lume/plugins/pagefind.ts";
 import markdown from "lume/plugins/markdown.ts";
+import footnotes from "markdown-plugins/footnotes.ts";
 import nunjucks from "lume/plugins/nunjucks.ts";
 
 // Configure Lume to use 'content' as the source root.
@@ -10,6 +11,7 @@ const site = lume({ src: "./content" });
 
 // Enable markdown processing with layout support
 site.use(markdown());
+site.use(footnotes());
 
 // Enable Nunjucks templating for .njk layout files
 site.use(nunjucks());
