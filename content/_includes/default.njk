@@ -299,24 +299,24 @@
       {% if gitModified %}
       <div class="metadata-item">
         <div class="metadata-label">Date</div>
-        <div class="metadata-value">{{ gitModified | formatGitDate }}</div>
+        <div class="metadata-value">{{ gitModified | formatDateISO }}</div>
       </div>
       {% elif date %}
       <div class="metadata-item">
         <div class="metadata-label">Date</div>
-        <div class="metadata-value">{{ date }}</div>
+        <div class="metadata-value">{{ date | formatDateISO }}</div>
       </div>
       {% endif %}
       
       {% if gitModified %}
       <div class="metadata-item">
         <div class="metadata-label">Last Modified</div>
-        <div class="metadata-value">{{ gitModified | formatGitDate }}</div>
+        <div class="metadata-value">{{ gitModified | formatDateISO }}</div>
       </div>
       {% elif lastmod %}
       <div class="metadata-item">
         <div class="metadata-label">Last Modified</div>
-        <div class="metadata-value">{{ lastmod }}</div>
+        <div class="metadata-value">{{ lastmod | formatDateISO }}</div>
       </div>
       {% endif %}
       
@@ -332,10 +332,10 @@
         <div class="metadata-label">GitHub</div>
         <div class="metadata-value">
           {% if gitCreated %}
-          <div style="margin-bottom: 0.25rem;">Created: {{ gitCreated | formatGitDate }}</div>
+          <div style="margin-bottom: 0.25rem;">Created: {{ gitCreated | formatDateISO }}</div>
           {% endif %}
           {% if gitModified %}
-          <div>Modified: {{ gitModified | formatGitDate }}</div>
+          <div>Modified: {{ gitModified | formatDateISO }}</div>
           {% endif %}
         </div>
       </div>
