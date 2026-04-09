@@ -29,6 +29,24 @@ site.filter("formatDateISO", (dateString: string) => {
   }
 });
 
+// Add custom filter for parsing note filenames
+site.filter("parseNoteFilename", (filename: string) => {
+  if (!filename) return null;
+  
+  // Remove .md extension
+  const base = filename.replace(/\.md$/, "");
+  const parts = base.split(".");
+  
+  if (parts.length < 2) {
+    return null; // Doesn't match the naming convention
+  }
+  
+  const category = parts.pop()!; // Last part is category
+  const name = parts.join(".");   // Everything else is the name (handles dots in name)
+  
+  return { name, category };
+});
+
 // Enable PageFind for static search indexing
 site.use(pagefind());
 
@@ -56,6 +74,7 @@ interface NoteInfo {
  * Examples:
  *   - "delegation.philosophy.md" → { name: "delegation", category: "philosophy" }
  *   - "automation.map.md" → { name: "automation", category: "map" }
+ *   - "empathy-machine.md" → { name: "empathy-machine", category: "uncategorized" }
  */
 function parseNoteFilename(filename: string): { name: string; category: string } | null {
   // Remove .md extension
@@ -63,7 +82,8 @@ function parseNoteFilename(filename: string): { name: string; category: string }
   const parts = base.split(".");
   
   if (parts.length < 2) {
-    return null; // Doesn't match the naming convention
+    // Files without category get "uncategorized" as category
+    return { name: base, category: "uncategorized" };
   }
   
   const category = parts.pop()!; // Last part is category
@@ -111,10 +131,13 @@ function buildCategoryIndex(pages: any[]): Map<string, NoteInfo[]> {
   return index;
 }
 
-// Preprocessor to add backlinks data to map files and metadata to all notes
-site.preprocess([".md"], (pages) => {
+// Processor to add backlinks data to map files and metadata to all notes
+site.process([".html"], (pages) => {
   // Build the category → notes index
   const categoryIndex = buildCategoryIndex(pages);
+  
+  // Build a flat list of all catalog notes for navigation
+  const catalogNotes: NoteInfo[] = [];
   
   for (const page of pages) {
     const srcPath = page.src?.path as string | undefined;
@@ -133,6 +156,15 @@ site.preprocess([".md"], (pages) => {
     page.data.noteCategory = isMap ? "map" : category;
     page.data.isMap = isMap;
     
+    // Add to catalog notes list (skip map files for navigation)
+    if (!isMap) {
+      const url = page.data.url as string | undefined;
+      const title = (page.data.title as string) || name;
+      if (url) {
+        catalogNotes.push({ name, category, title, url, isMap });
+      }
+    }
+    
     if (isMap) {
       // This is a map file - add backlinks to notes in this category
       const mapCategory = name; // For map files, the name IS the category
@@ -145,6 +177,14 @@ site.preprocess([".md"], (pages) => {
       page.data.backlinks = backlinks;
       page.data.mapCategory = mapCategory;
     }
+  }
+  
+  // Sort catalog notes alphabetically by title
+  catalogNotes.sort((a, b) => a.title.localeCompare(b.title));
+  
+  // Add catalog notes to all pages for navigation
+  for (const page of pages) {
+    page.data.catalogNotes = catalogNotes;
   }
 });
 

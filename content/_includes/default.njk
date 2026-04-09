@@ -62,14 +62,63 @@
     .search-no-results { padding: 1rem; text-align: center; color: var(--color-text-secondary); font-size: 0.9rem; }
     .search-loading { padding: 1rem; text-align: center; color: var(--color-text-secondary); font-size: 0.9rem; }
 
-    /* Note layout with metadata panel */
+    /* Note layout with notes list and metadata panel */
     .note-layout {
-      max-width: 960px;
+      max-width: 1200px;
       margin: 0 auto 4rem;
       display: grid;
-      grid-template-columns: 1fr 220px;
+      grid-template-columns: 240px 1fr 220px;
       gap: 1.5rem;
       align-items: start;
+    }
+    
+    /* Notes list panel on left */
+    .notes-list-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      position: sticky;
+      top: 1rem;
+      font-size: 0.9rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      max-height: calc(100vh - 2rem);
+      overflow-y: auto;
+    }
+    .notes-list-panel h3 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-secondary);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .notes-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 0;
+    }
+    .notes-list li {
+      margin-bottom: 0.5rem;
+    }
+    .notes-list a {
+      color: var(--color-text-secondary);
+      text-decoration: none;
+      display: block;
+      padding: 0.25rem 0;
+      border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .notes-list a:hover {
+      color: var(--color-accent);
+      background: #f5f7ff;
+    }
+    .notes-list a.active {
+      color: var(--color-accent);
+      font-weight: 500;
+      background: #f0f4ff;
     }
     
     /* Metadata panel on right */
@@ -220,6 +269,11 @@
       .note-layout {
         grid-template-columns: 1fr;
       }
+      .notes-list-panel {
+        position: static;
+        margin-bottom: 1rem;
+        max-height: none;
+      }
       .metadata-panel {
         position: static;
         margin-bottom: 1rem;
@@ -252,8 +306,21 @@
     </div>
   </header>
 
-  <!-- ── Note Layout: Content + Metadata Panel ── -->
+  <!-- ── Note Layout: Notes List + Content + Metadata Panel ── -->
   <div class="note-layout">
+    <!-- ── Notes List Panel (Left Sidebar) ── -->
+    <aside class="notes-list-panel">
+      <h3>Notes</h3>
+      <ul class="notes-list">
+        <li><a href="/catalog/snippets.userchrome-js/" title="snippets.userchrome-js">snippets.userchrome-js</a></li>
+        <li><a href="/catalog/delegation.philosophy/" title="delegation.philosophy">delegation.philosophy</a></li>
+        <li><a href="/catalog/empathy-machine/" title="empathy-machine">empathy-machine</a></li>
+        <li><a href="/catalog/shounen-manga.writing/" title="shounen-manga.writing">shounen-manga.writing</a></li>
+        <li><a href="/catalog/test.automation/" title="test.automation">test.automation</a></li>
+        <li><a href="/catalog/automation.map/" title="automation.map">automation.map</a></li>
+      </ul>
+    </aside>
+
     <!-- ── Note Content ── -->
     <main class="note-container">
     {{ content | safe }}
