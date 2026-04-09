@@ -57,9 +57,82 @@
     .search-no-results { padding: 1rem; text-align: center; color: var(--color-text-secondary); font-size: 0.9rem; }
     .search-loading { padding: 1rem; text-align: center; color: var(--color-text-secondary); font-size: 0.9rem; }
 
+    /* Note layout with metadata panel */
+    .note-layout {
+      max-width: 960px;
+      margin: 0 auto 4rem;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    
+    /* Metadata panel on left */
+    .metadata-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      position: sticky;
+      top: 1rem;
+      font-size: 0.9rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .metadata-panel h3 {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-text-secondary);
+      margin-bottom: 0.75rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .metadata-item {
+      margin-bottom: 0.75rem;
+    }
+    .metadata-item:last-child {
+      margin-bottom: 0;
+    }
+    .metadata-label {
+      font-size: 0.75rem;
+      color: var(--color-text-secondary);
+      margin-bottom: 0.15rem;
+    }
+    .metadata-value {
+      font-weight: 500;
+      color: var(--color-text);
+      word-break: break-word;
+    }
+    .metadata-value a {
+      color: var(--color-accent);
+      text-decoration: none;
+    }
+    .metadata-value a:hover {
+      text-decoration: underline;
+    }
+    .metadata-badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .badge-draft {
+      background: #fef3c7;
+      color: #92400e;
+    }
+    .badge-category {
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+    .badge-map {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    
     /* Note content */
     .note-container {
-      max-width: var(--max-width); margin: 0 auto 4rem;
       background: var(--color-surface); border: 1px solid var(--color-border);
       border-radius: 10px; padding: 2rem 2.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
@@ -138,7 +211,19 @@
       text-decoration: underline;
     }
 
-    @media (max-width: 600px) { .note-container { padding: 1.25rem; } .site-header { margin-top: 1.25rem; } }
+    @media (max-width: 768px) {
+      .note-layout {
+        grid-template-columns: 1fr;
+      }
+      .metadata-panel {
+        position: static;
+        margin-bottom: 1rem;
+      }
+    }
+    @media (max-width: 600px) {
+      .note-container { padding: 1.25rem; }
+      .site-header { margin-top: 1.25rem; }
+    }
   </style>
 </head>
 <body>
@@ -162,8 +247,79 @@
     </div>
   </header>
 
-  <!-- ── Note Content ── -->
-  <main class="note-container">
+  <!-- ── Note Layout: Metadata Panel + Content ── -->
+  <div class="note-layout">
+    <!-- ── Metadata Panel (Left Sidebar) ── -->
+    <aside class="metadata-panel">
+      <h3>Metadata</h3>
+      
+      {% if title %}
+      <div class="metadata-item">
+        <div class="metadata-label">Title</div>
+        <div class="metadata-value">{{ title }}</div>
+      </div>
+      {% endif %}
+      
+      {% if noteCategory %}
+      <div class="metadata-item">
+        <div class="metadata-label">Category</div>
+        <div class="metadata-value">
+          <span class="metadata-badge {% if isMap %}badge-map{% else %}badge-category{% endif %}">
+            {{ noteCategory }}
+          </span>
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if noteName %}
+      <div class="metadata-item">
+        <div class="metadata-label">Name</div>
+        <div class="metadata-value">{{ noteName }}</div>
+      </div>
+      {% endif %}
+      
+      {% if draft == true %}
+      <div class="metadata-item">
+        <div class="metadata-label">Status</div>
+        <div class="metadata-value">
+          <span class="metadata-badge badge-draft">Draft</span>
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if isMap %}
+      <div class="metadata-item">
+        <div class="metadata-label">Type</div>
+        <div class="metadata-value">
+          <span class="metadata-badge badge-map">Map</span>
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if date %}
+      <div class="metadata-item">
+        <div class="metadata-label">Date</div>
+        <div class="metadata-value">{{ date }}</div>
+      </div>
+      {% endif %}
+      
+      {% if lastmod %}
+      <div class="metadata-item">
+        <div class="metadata-label">Last Modified</div>
+        <div class="metadata-value">{{ lastmod }}</div>
+      </div>
+      {% endif %}
+      
+      {% if tags and tags.length %}
+      <div class="metadata-item">
+        <div class="metadata-label">Tags</div>
+        <div class="metadata-value">{{ tags | join(", ") }}</div>
+      </div>
+      {% endif %}
+    </aside>
+
+    <!-- ── Note Content ── -->
+    <main class="note-container">
     {{ content | safe }}
 
     {% if isMap and backlinks and backlinks.length %}
@@ -194,6 +350,7 @@
     </section>
     {% endif %}
   </main>
+  </div><!-- /.note-layout -->
 
   <!-- PageFind search bundle (output by the Lume pagefind plugin) -->
   <script type="module">

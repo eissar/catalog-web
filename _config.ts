@@ -98,7 +98,7 @@ function buildCategoryIndex(pages: any[]): Map<string, NoteInfo[]> {
   return index;
 }
 
-// Preprocessor to add backlinks data to map files
+// Preprocessor to add backlinks data to map files and metadata to all notes
 site.preprocess([".md"], (pages) => {
   // Build the category → notes index
   const categoryIndex = buildCategoryIndex(pages);
@@ -110,19 +110,28 @@ site.preprocess([".md"], (pages) => {
     const filename = srcPath.split("/").pop()!;
     const parsed = parseNoteFilename(filename);
     
-    if (!parsed || parsed.category !== "map") continue;
+    if (!parsed) continue;
     
-    // This is a map file - add backlinks to notes in this category
-    const mapCategory = parsed.name; // For map files, the name IS the category
-    const backlinks = categoryIndex.get(mapCategory) || [];
+    const { name, category } = parsed;
+    const isMap = category === "map";
     
-    // Sort backlinks alphabetically by title
-    backlinks.sort((a, b) => a.title.localeCompare(b.title));
+    // Add note metadata for all notes (accessible in templates)
+    page.data.noteName = name;
+    page.data.noteCategory = isMap ? "map" : category;
+    page.data.isMap = isMap;
     
-    // Add to page data for template access
-    page.data.backlinks = backlinks;
-    page.data.isMap = true;
-    page.data.mapCategory = mapCategory;
+    if (isMap) {
+      // This is a map file - add backlinks to notes in this category
+      const mapCategory = name; // For map files, the name IS the category
+      const backlinks = categoryIndex.get(mapCategory) || [];
+      
+      // Sort backlinks alphabetically by title
+      backlinks.sort((a, b) => a.title.localeCompare(b.title));
+      
+      // Add to page data for template access
+      page.data.backlinks = backlinks;
+      page.data.mapCategory = mapCategory;
+    }
   }
 });
 
