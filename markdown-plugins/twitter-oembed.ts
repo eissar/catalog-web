@@ -131,35 +131,76 @@ function generateStaticTweetHtml(oembedData: OEmbedResponse): string {
 
 /**
  * Process markdown content to replace Twitter URLs with static embeds
+ * Excludes URLs that appear in footnote definitions
  */
 async function processTwitterEmbeds(content: string, options: TwitterOEmbedOptions = {}): Promise<string> {
   // Regex to match Twitter/X URLs
   const twitterUrlRegex = /https?:\/\/(?:twitter\.com|x\.com)\/[\w]+\/status\/(\d+)/g;
   
-  let processedContent = content;
-  const urlMatches = content.match(twitterUrlRegex);
+  // Regex to match footnote definitions (lines starting with [^X]:)
+  const footnoteDefinitionRegex = /^\s*\[\^[^\]]+\]:.*$/gm;
   
-  if (urlMatches) {
-    // Use a Set to avoid duplicate API calls
-    const uniqueUrls = [...new Set(urlMatches)];
+  // Split content into lines
+  const lines = content.split('\n');
+  let processedLines: string[] = [];
+  let inFootnoteDefinition = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     
-    // Fetch oEmbed data for each unique URL
-    const oembedPromises = uniqueUrls.map(url => fetchTwitterOEmbed(url, options));
-    const oembedResults = await Promise.all(oembedPromises);
+    // Check if this line starts a footnote definition
+    if (line.match(/^\s*\[\^[^\]]+\]:/)) {
+      inFootnoteDefinition = true;
+      processedLines.push(line); // Keep footnote definition as-is
+      continue;
+    }
     
-    // Create a mapping of URL to static HTML
-    const urlToHtmlMap = new Map<string, string>();
-    uniqueUrls.forEach((url, index) => {
-      urlToHtmlMap.set(url, generateStaticTweetHtml(oembedResults[index]));
-    });
+    // If we're in a footnote definition block, check if this line continues it
+    if (inFootnoteDefinition) {
+      // Footnote definition continues if line starts with whitespace
+      if (line.match(/^\s/) && line.trim() !== '') {
+        processedLines.push(line); // Keep footnote content as-is
+        continue;
+      } else {
+        // End of footnote definition
+        inFootnoteDefinition = false;
+      }
+    }
     
-    // Replace all Twitter URLs with their static HTML
-    processedContent = processedContent.replace(twitterUrlRegex, (match) => {
-      return urlToHtmlMap.get(match) || match;
-    });
+    // Process Twitter URLs only if NOT in a footnote definition
+    if (!inFootnoteDefinition) {
+      const urlMatches = line.match(twitterUrlRegex);
+      
+      if (urlMatches) {
+        // Use a Set to avoid duplicate API calls
+        const uniqueUrls = [...new Set(urlMatches)];
+        
+        // Fetch oEmbed data for each unique URL
+        const oembedPromises = uniqueUrls.map(url => fetchTwitterOEmbed(url, options));
+        const oembedResults = await Promise.all(oembedPromises);
+        
+        // Create a mapping of URL to static HTML
+        const urlToHtmlMap = new Map<string, string>();
+        uniqueUrls.forEach((url, index) => {
+          urlToHtmlMap.set(url, generateStaticTweetHtml(oembedResults[index]));
+        });
+        
+        // Replace Twitter URLs with their static HTML
+        let processedLine = line;
+        processedLine = processedLine.replace(twitterUrlRegex, (match) => {
+          return urlToHtmlMap.get(match) || match;
+        });
+        
+        processedLines.push(processedLine);
+      } else {
+        processedLines.push(line);
+      }
+    } else {
+      processedLines.push(line);
+    }
   }
   
-  return processedContent;
+  return processedLines.join('\n');
 }
 
 export default function twitterOEmbedPlugin(options: TwitterOEmbedOptions = {}) {
